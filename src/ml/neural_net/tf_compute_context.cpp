@@ -222,19 +222,29 @@ tf_image_augmenter::prepare_augmented_images(
         augmented_data
             .cast<std::pair<pybind11::buffer, std::vector<pybind11::buffer>>>();
 
+    // Copy images
     pybind11::buffer_info buf_img = std::get<0>(aug_data).request();
     image_annotations.images = turi::neural_net::shared_float_array::copy(
         static_cast<float*>(buf_img.ptr),
         std::vector<size_t>(buf_img.shape.begin(), buf_img.shape.end()));
+
+    // Copy annotations
     std::vector<turi::neural_net::shared_float_array> annotations_per_batch;
     std::vector<pybind11::buffer> aug_annotations = std::get<1>(aug_data);
 
     for (size_t i = 0; i < aug_annotations.size(); i++) {
       pybind11::buffer_info buf_ann = aug_annotations[i].request();
-      turi::neural_net::shared_float_array annotate =
-          turi::neural_net::shared_float_array::copy(
-              static_cast<float*>(buf_ann.ptr),
-              std::vector<size_t>(buf_ann.shape.begin(), buf_ann.shape.end()));
+      size_t num_annotations = buf_ann.shape[0];
+      turi::neural_net::shared_float_array annotate;
+      if (num_annotations > 0) {
+        annotate = turi::neural_net::shared_float_array::copy(
+            static_cast<float*>(buf_ann.ptr),
+            std::vector<size_t>(buf_ann.shape.begin(), buf_ann.shape.end()));
+      } else {
+        std::vector<float> data = {0};
+        std::vector<size_t> shape = {1};
+        annotate = turi::neural_net::shared_float_array::wrap(data, shape);
+      }
       annotations_per_batch.push_back(annotate);
     }
     image_annotations.annotations = annotations_per_batch;
