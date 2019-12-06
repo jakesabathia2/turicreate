@@ -212,11 +212,16 @@ class OneShotObjectDetector(_CustomModel):
         additional_user_defined_metadata = _coreml_utils._get_tc_version_info()
         short_description = _coreml_utils._mlmodel_short_description('Object Detector')
         if USE_CPP:
-            options = {
-                    'include_non_maximum_suppression': include_non_maximum_suppression,
-                    'confidence_threshold': confidence_threshold,
-                    'iou_threshold': iou_threshold,
-            }
+
+            options = {'include_non_maximum_suppression': include_non_maximum_suppression,}
+            if confidence_threshold is not None:
+                options['confidence_threshold'] = confidence_threshold
+
+            if iou_threshold is not None:
+                options['iou_threshold'] = iou_threshold
+
+            options['version'] = self._PYTHON_ONE_SHOT_OBJECT_DETECTOR_VERSION
+
             additional_user_defined_metadata = _coreml_utils._get_tc_version_info()
             short_description = _coreml_utils._mlmodel_short_description('One Shot Object Detector')
             self.__proxy__['detector'].__proxy__.export_to_coreml(filename,
